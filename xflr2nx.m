@@ -55,6 +55,8 @@ pref = {};
 rowH = 15;
 comp = 0;
 xmlPath = 0;
+configChanged = 0;
+prefChanged = 0;
 
 % Check compatibility.
 if verLessThan('matlab','9.5')
@@ -65,7 +67,7 @@ end
 
 % Setup folders.
 [paths.root,~,~] = fileparts(mfilename('fullpath'));
-paths.res = fullfile(paths.root,'resources',filesep);
+paths.res = fullfile(paths.root,'files',filesep);
 paths.con = fullfile(paths.res,'config.mat');
 paths.aero = fullfile(paths.res,'aerofoil.mat');
 if exist(fullfile(paths.res,'lang.mat'),'file')
@@ -97,7 +99,11 @@ end
 try
     load(paths.lang,'list');
 catch
-    load(fullfile(paths.root,'lang.mat'),'list');
+    try
+        load(fullfile(paths.root,'lang.mat'),'list');
+    catch
+        error('xflr2nx:main:langMissing','The lang.mat file is missing.');
+    end
 end
 % Set the localisation to the language file.
 localisation.lang = pref.lang;
@@ -326,106 +332,7 @@ end
         command = commandList{1};
         switch command
             case 'setup'
-                
-                % Perform the setup of folders needed.
-                if ~exist(paths.out,'dir')
-                    mkdir(paths.out);
-                end
-                if ~exist(paths.dat,'dir')
-                    mkdir(paths.dat);
-                end
-                if ~exist(paths.xml,'dir')
-                    mkdir(paths.xml);
-                end
-                if ~exist(paths.res,'dir')
-                    mkdir(paths.res);
-                end
-                
-                % Setup default config file.
-                config.shiftSections = 1;
-                config.autoReload = 1;
-                config.showAxis = 1;
-                config.fancyGraphics = 1;
-                config.individualColours = 1;
-                config.exportFile = 1;
-                config.exportVar = 1;
-                config.devWarn = 1;
-                config.debugWarn = 1;
-                config.showUI = 1;
-                
-                pref.lastXml = paths.xml;
-                pref.lang = get(0,'language');
-                pref.installLang = get(0,'language');
-                pref.lengthUnits = localisation.units.lengthNames{1};
-                pref.massUnits = localisation.units.massNames{1};
-                pref.mainColour = [0.5 0.5 0.5];
-                pref.secondColour = [0.5 0.5 0.5];
-                pref.elevatorColour = [0.5 0.5 0.5];
-                pref.finColour = [0.5 0.5 0.5];
-                pref.defaultW = 0.55;
-                pref.defaultH = 0.55;
-                
-                save(paths.con,'config','pref');
-                
-                % Write the cog image for use later.
-                blackRGB = uint8(zeros(16,16,3));
-                cogAlp = uint8([0 0 0 0 0 0 50 247 247 50 0 0 0 0 0 0;0 ...
-                    0 8 43 0 0 157 255 255 157 0 0 43 8 0 0;0 8 184 255 ...
-                    192 120 246 255 255 246 118 192 255 184 8 0;0 43 255 ...
-                    255 255 255 255 255 255 255 255 255 255 255 43 0;0 0 ...
-                    192 255 255 255 255 255 255 255 255 255 255 192 0 0;0 ...
-                    0 119 255 255 248 110 15 15 110 248 255 255 120 0 0;...
-                    50 157 246 255 255 112 0 0 0 0 112 255 255 246 157 ...
-                    50; 247 255 255 255 255 19 0 0 0 0 20 255 255 255 255 ...
-                    247; 247 255 255 255 255 21 0 0 0 0 21 255 255 255 ...
-                    255 247; 50 157 246 255 255 118 0 0 0 0 118 255 255 ...
-                    246 157 50; 0 0 119 255 255 250 120 25 25 120 250 255 ...
-                    255 118 0 0; 0 0 192 255 255 255 255 255 255 255 255 ...
-                    255 255 192 0 0;0 43 255 255 255 255 255 255 255 255 ...
-                    255 255 255 255 43 0;0 8 184 255 192 119 246 255 255 ...
-                    246 119 192 255 184 8 0;0 0 8 43 0 0 157 255 255 157 ...
-                    0 0 43 8 0 0; 0 0 0 0 0 0 50 247 247 50 0 0 0 0 0 0]);
-                
-                rightArrowAlp = uint8([0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;0 0 0 ...
-                    0 0 0 0 0 0 0 0 0 0 0 0 0;100 130 130 130 35 0 39 ...
-                    130 130 130 97 0 0 0 0 0;35 226 255 255 227 35 0 141 ...
-                    255 255 255 127 0 0 0 0;0 35 226 255 255 227 35 0 141 ...
-                    255 255 255 128 0 0 0;0 0 35 226 255 255 227 35 0 141 ...
-                    255 255 255 128 0 0;0 0 0 35 226 255 255 227 36 0 141 ...
-                    255 255 255 128 0;0 0 0 0 35 232 255 255 227 32 0 141 ...
-                    255 255 255 128;0 0 0 0 35 227 255 255 227 35 0 141 ...
-                    255 255 255 143;0 0 0 35 227 255 255 228 37 1 141 255 ...
-                    255 255 145 0;0 0 35 227 255 255 233 40 0 141 255 255 ...
-                    255 145 0 0;0 35 227 255 255 232 44 0 137 255 255 255 ...
-                    142 0 0 0;33 226 255 255 235 45 0 123 255 255 255 137 ...
-                    0 0 0 0;103 148 148 148 45 0 31 130 147 148 107 0 0 0 ...
-                    0 0;0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;0 0 0 0 0 0 0 0 0 ...
-                    0 0 0 0 0 0 0]);
-                
-                leftArrowAlp = fliplr(rightArrowAlp);
-                
-                imwrite(blackRGB,fullfile(paths.res,'cog.png'),'Alpha',cogAlp);
-                imwrite(blackRGB,fullfile(paths.res,'rightarrow.png'),'Alpha',rightArrowAlp);
-                imwrite(blackRGB,fullfile(paths.res,'leftarrow.png'),'Alpha',leftArrowAlp);
-                
-                % Move the language file to maintain a tidy directory.
-                if exist(fullfile(paths.root,'lang.mat'),'file')
-                    movefile(fullfile(paths.root,'lang.mat'),fullfile(paths.res,'lang.mat'));
-                    paths.lang = fullfile(paths.res,'lang.mat');
-                elseif ~exist(fullfile(paths.res,'lang.mat'),'file')
-                    errorStruct.identifier = 'xflr2nx:CommandHandler:missingLangFile';
-                    errorStruct.message = 'No language file could be located.';
-                    error(errorStruct);
-                end
-                
-                % Add the folders to the path so they can be used.
-                addpath(genpath(paths.out));
-                addpath(genpath(paths.dat));
-                addpath(genpath(paths.xml));
-                addpath(genpath(paths.res));
-                
-                % Initialise the DAT matrix by updating it.
-                UpdateDatMatrix;
+                Setup;
                 
             case 'reload'
                 % If reload is called, reload all .dat files
@@ -558,6 +465,7 @@ end
                 aerofoilList{fileNum}.filename = fileList(fileNum).name;
                 aerofoilList{fileNum}.folder = fileList(fileNum).folder;
                 fclose(thisFileID);
+                DebugLog(sprintf('Loaded file %s successfully...',thisName{1}{1}));
             catch
                 fclose(thisFileID);
                 errorStruct.identifier = 'xflr2nx:UpdateDatMatrix:badDatFormat';
@@ -568,6 +476,7 @@ end
         aerofoilListOut = DatConflictResolver(aerofoilList);
         aerofoilList = aerofoilListOut;
         save(paths.aero,'aerofoilList')
+        DebugLog('Saved foil list successfully...');
     end
 
     function aerofoilListOut = DatConflictResolver(aerofoilListIn)
@@ -579,7 +488,11 @@ end
                 otherFoil = aerofoilListIn(ismember(foilNames(1:foil-1),thisFoil.name));
                 otherFoil = otherFoil{1};
                 % Launch graphic window to resolve conflict.
-                DrawConflictGui(thisFoil,otherFoil);
+                if comp
+                    DrawConflictGuiLeg(thisFoil,otherFoil);
+                else
+                    DrawConflictGui(thisFoil,otherFoil);
+                end
                 uiwait
                 return
             else
@@ -833,11 +746,7 @@ end
         m_le_ed = NaN(secs,3);
         le_ed = NaN(secs,3);
         
-        if comp
-            ax = graphics.complete.preview.hWingPlotAxes;
-        else
-            ax = graphics.complete.preview.wingPlotAxes;
-        end
+        ax = graphics.choice.wingPlotAxes;
         
         for n=1:length(m)
             
@@ -1037,32 +946,118 @@ end
         
     end
 
-    function ConsoleChar(inCell)
-        % CONSOLECHAR Print a character vector to the console, with line
-        % wrap to prevent the need to scroll. Takes a cell of format-text
-        % specifications.
+    function Process(field)
         
-        % Get the width of the command window.
-        width = get(0,'CommandWindowSize');
-        width = width(1);
+        % Load the data.
+        data = plane.(field).sections;
+        matrix = [[data.chord]',[data.twist]',[data.xOffset]',[data.dihedral]',[data.yPosition]'];
+        DebugLog(sprintf('Loaded %s data for processing successfully...',field));
         
-        % One line to prevent confusion with above text.
-        fprintf('\n')
+        % Add fin dihedral.
+        if strcmp(field,'fin')
+            matrix(:,4) = matrix(:,4) + 90;
+        end
         
-        % For each row, process.
-        for row = 1:numel(inCell)/2
-            formatSpec = inCell{row,1};
-            fullChar = inCell{row,2};
-            textWidth = width - 4 * length(strfind(formatSpec,'\t'));
-            charsLeft = fullChar;
-            while ~isempty(charsLeft)
-                spaces = regexp(charsLeft,' ');
-                
+        numSections = size(matrix,1);
+        
+        % Make the yPositions relative.
+        for i = 2:numSections
+            for j = 1:i-1
+                matrix(i,5) = matrix(i,5) - matrix(i-j,5);
+            end
+        end
+        
+        % End dihedral cannot be zero.
+        if matrix(end,4) == 0
+            matrix(end,4) = matrix(end-1,4);
+        end
+        
+        % Check both wings use same aerofoil.
+        if strcmp({data.leftFoil},{data.rightFoil})
+            aerofoil = {data.leftFoil}';
+        else
+            aerofoil = {data.leftFoil;data.rightFoil}';
+        end
+        
+        iCoords = [0,0];
+        for i = 1:numSections
+            for foil = 1:length(aerofoilList)
+                if strcmp(aerofoilList{foil}.name,aerofoil{i})
+                    iCoords = aerofoilList{foil}.coords;
+                end
+            end
+            
+            % If loop has executed fully without changing data.
+            if isequal(iCoords,[0,0])
+                errorStruct.identifier = 'xflr2nx:Main:aerofoilMissing';
+                errorStruct.message = sprintf('There is no data for %s.',aerofoil{i});
+                error(errorStruct);
+            end
+            
+            % Now add third dimension.
+            iCoords(:,3) = 0;
+            
+            % Rotation.
+            oCoords = iCoords * matrix(i,1);
+            if i == 1 && matrix(i,4) ~= 0     % Inboardmost.
+                oCoords = oCoords * rotx(matrix(i,4));
+            elseif matrix(i,4) ~= 0           % All others.
+                oCoords = oCoords * rotx(matrix(i-1,4));
+            end
+            
+            % Twist.
+            if matrix(i,2) ~= 0
+                oCoords(:,1) = oCoords(:,1) + (matrix(i,1)/4);
+                oCoords(:,1) = cosd(matrix(i,2)).*oCoords(:,1) + sind(matrix(i,2)).*oCoords(:,2);
+                oCoords(:,2) = (-sind(matrix(i,2))).*oCoords(:,1) + cosd(matrix(i,2)).*oCoords(:,2);
+                oCoords(:,1) = oCoords(:,1) - (matrix(i,1)/4);
+            end
+            
+            % Sweep.
+            if matrix(i,3) ~= 0
+                oCoords(:,1) = oCoords(:,1) + matrix(i,3);
+            end
+            
+            % Spanwise position.
+            if matrix(i,5) ~= 0
+                if i == 1 % In case not starting at y = 0.
+                    oCoords(:,3) = oCoords(:,3) + matrix(1,5) * cosd(matrix(1,4));
+                    oCoords(:,2) = oCoords(:,2) + matrix(1,5) * sind(matrix(1,4));
+                else
+                    for j=1:i-1 % Add the effect of every section so far.
+                        if i-j>0
+                            oCoords(:,3)=oCoords(:,3)+(matrix(i-j+1,5)*cosd(matrix(i-j,4)));
+                            oCoords(:,2)=oCoords(:,2)+(matrix(i-j+1,5)*sind(matrix(i-j,4)));
+                        end
+                    end
+                end
+            end
+            
+            finalCoords=oCoords(:,[1 3 2]); % Permute to swap axes.
+            
+            % Apply section shift.
+            if config.shiftSections
+                finalCoords = finalCoords + plane.(field).position';
+            end
+            
+            % Assign the graphics copy of the wing.
+            graphics.(sprintf('%sCoords',field)){i} = finalCoords;
+            
+            DebugLog(sprintf('Processed %s section %i successfully...',field,i));
+            
+            % Export the files.
+            if config.exportFile
+                curDir = cd;
+                cd(pref.lastOutputDir)
+                outputName = sprintf('%s %i (%s).dat',plane.(field).name,i,aerofoil{i});
+                dlmwrite(outputName,finalCoords,'delimiter','\t','newline','pc');
+                cd(curDir);
+                DebugLog(sprintf('Successfully wrote file %s...',outputName));
             end
         end
     end
 
-    function Process(field)
+    function Process2(field)
         
         % Load the data.
         data = plane.(field).sections;
@@ -1158,18 +1153,8 @@ end
             % Assign the graphics copy of the wing.
             graphics.(sprintf('%sCoords',field)){i} = finalCoords;
             
-            % Export the files.
-            if config.exportFile
-                curDir = cd;
-                cd(pref.lastOutputDir)
-                outputName = sprintf('%s %i (%s).dat',plane.(field).name,i,aerofoil{i});
-                dlmwrite(outputName,finalCoords,'delimiter','\t','newline','pc');
-                cd(curDir);
-            end
-            
+            DebugLog(sprintf('Processed %s section %i successfully...',field,i));
         end
-        
-        
     end
 
     function Kernel
@@ -1186,10 +1171,13 @@ end
                 error(errorStruct);
             end
         end
+        DebugLog('XML name is OK...');
         
         % Import and clean up the raw XML structure.
         raw = xml2struct(xmlPath);
+        DebugLog('XML imported successfully...');
         UnpackPlane(raw);
+        DebugLog('Plane data format converted successfully...');
         
         % Coords storage for graphics.
         graphics.mainWingCoords = {};
@@ -1205,22 +1193,30 @@ end
             errorStruct.message = localisation.error.Main.noWingSections;
             error(errorStruct);
         end
+        DebugLog(sprintf('Sections data identified successfully for %i section(s)...',length(thisParts)));
         
         % Make a new folder for the output files.
         if config.exportFile
             parentDir = fullfile(paths.out,xmlName,filesep);
             if ~exist(parentDir,'dir')
+                DebugLog('Parent directory not found. Attempting to make one...');
                 mkdir(parentDir);
+                DebugLog('Parent directory made successfully...');
+            else
+                DebugLog('Parent directory found...');
             end
             dateAndTime = datestr(datetime('now'),localisation.dateTimeFormat);
             pref.lastOutputDir = fullfile(parentDir,dateAndTime);
             mkdir(pref.lastOutputDir)
+            DebugLog('Output directory made successfully...')
             save(paths.con,'pref','config');
         end
         
         for part = 1:length(thisParts)
             Process(thisParts{part});
         end
+        
+        DebugLog('Wrote all parts successfully...');
         
         % Tidy up name for output, then assign variable in the base workspace.
         if config.exportVar
@@ -1230,6 +1226,13 @@ end
                 varName = plane.name;
             end
             assignin('base',sprintf(NameTidy2(varName)),plane);
+            DebugLog('Wrote the output variable to base workspace successfully...');
+        end
+        
+        DebugLog('Completed Successfully.')
+        if debug
+            graphics.debug.continue.Enable = 'on';
+            uiwait(graphics.f);
         end
         
         % Run the completion GUI.
@@ -1243,395 +1246,236 @@ end
         
     end
 
-%% == GRAPHICS FUNCTIONS ==================================================
-
-    function DrawCompleteGui
-        % COMPLETEGUI draws the GUI window which shows upon completion of
-        % the file writing.
-        
-        % Load variables.
-        load(paths.con,'pref','config');
-        
-        try
-            pref.mainColour = plane.mainWing.colour(1:3)/255;
-        end
-        try
-            pref.secondColour = plane.secondWing.colour(1:3)/255;
-        end
-        try
-            pref.elevatorColour = plane.elevator.colour(1:3)/255;
-        end
-        try
-            pref.finColour = plane.fin.colour(1:3)/255;
-        end
-        
-        graphics.complete.tabGroup = uitabgroup(graphics.f);
-        graphics.complete.tabGroup.Position = [0 0 figW figH];
-        
-        % Disable adjustment if fancy graphics is off.
-        if config.fancyGraphics
-            enableStr = 'on';
-        else
-            enableStr = 'off';
-        end
-        
-        % Check how many files were exported.
-        try
-            files = dir(pref.lastOutputDir);
-            exportNum = length(files) - 2;
-        catch
-            exportNum = 0;
-        end
-        if exportNum == 1
-            fileStr = 'file';
-        else
-            fileStr = 'files';
-        end
-        
-        % Add new tabs.
-        graphics.complete.tabOverview = uitab(graphics.complete.tabGroup);
-        graphics.complete.tabOverview.Title = sprintf('%s',localisation.gui.overview);
-        
-        graphics.complete.tabPreview = uitab(graphics.complete.tabGroup);
-        graphics.complete.tabPreview.Title = sprintf('%s',localisation.gui.preview);
-        
-        graphics.complete.tabExport = uitab(graphics.complete.tabGroup);
-        graphics.complete.tabExport.Title = 'Export';
-        
-        % Grid setup.
-        graphics.complete.overview.level1 = uigridlayout(graphics.complete.tabOverview);
-        graphics.complete.overview.level1.ColumnWidth = {35,'1x',100};
-        graphics.complete.overview.level1.RowHeight = {'1x',25};
-        
-        % Top-level grid items.
-        graphics.complete.overview.closeButton = uibutton(graphics.complete.overview.level1);
-        graphics.complete.overview.closeButton.Text = 'Close';
-        graphics.complete.overview.closeButton.ButtonPushedFcn = @Close;
-        graphics.complete.overview.closeButton.Layout.Row = 2;
-        graphics.complete.overview.closeButton.Layout.Column = 3;
-        
-        if dev
-            graphics.complete.overview.settingsButton = uibutton(graphics.complete.overview.level1);
-            graphics.complete.overview.settingsButton.Text = '';
-            graphics.complete.overview.settingsButton.Icon = fullfile(paths.res,'cog.png');
-            graphics.complete.overview.settingsButton.Layout.Row = 2;
-            graphics.complete.overview.settingsButton.Layout.Column = 1;
-        end
-        
-        % Main columns.
-        graphics.complete.overview.level2 = uigridlayout(graphics.complete.overview.level1);
-        graphics.complete.overview.level2.Layout.Row = 1;
-        graphics.complete.overview.level2.Layout.Column = [1 3];
-        graphics.complete.overview.level2.ColumnWidth = {'1x','1x'};
-        graphics.complete.overview.level2.RowHeight = {'1x'};
-        
-        % Add two panels.
-        graphics.complete.overview.summaryPanel = uipanel(graphics.complete.overview.level2);
-        graphics.complete.overview.summaryPanel.Title = 'Output Summary';
-        graphics.complete.overview.summaryPanel.FontWeight = 'bold';
-        graphics.complete.overview.summaryPanel.Layout.Row = 1;
-        graphics.complete.overview.summaryPanel.Layout.Column = 1;
-        
-        graphics.complete.overview.previewPanel = uipanel(graphics.complete.overview.level2);
-        graphics.complete.overview.previewPanel.Title = 'Preview Options';
-        graphics.complete.overview.previewPanel.FontWeight = 'bold';
-        graphics.complete.overview.previewPanel.Layout.Row = 1;
-        graphics.complete.overview.previewPanel.Layout.Column = 2;
-        
-        % Add the grids.
-        graphics.complete.overview.summary.level3 = uigridlayout(graphics.complete.overview.summaryPanel);
-        graphics.complete.overview.summary.level3.ColumnWidth = {'1x','1x'};
-        graphics.complete.overview.summary.level3.RowHeight = {rowH};
-        
-        graphics.complete.overview.preview.level3 = uigridlayout(graphics.complete.overview.previewPanel);
-        graphics.complete.overview.preview.level3.ColumnWidth = {'1x','1x'};
-        graphics.complete.overview.preview.level3.RowHeight = {25,25,25,25,25,25};
-        
-        % File overview panel.
-        graphics.complete.overview.fileExportText = uilabel(graphics.complete.overview.summary.level3);
-        graphics.complete.overview.fileExportText.Text ='Files Exported:';
-        graphics.complete.overview.fileExportText.HorizontalAlignment = 'right';
-        graphics.complete.overview.fileExportText.Layout.Row = 1;
-        graphics.complete.overview.fileExportText.Layout.Column = 1;
-        
-        graphics.complete.overview.fileExport = uilabel(graphics.complete.overview.summary.level3);
-        graphics.complete.overview.fileExport.Text = sprintf('%d %s',exportNum,fileStr);
-        graphics.complete.overview.fileExport.HorizontalAlignment = 'left';
-        graphics.complete.overview.fileExport.Layout.Row = 1;
-        graphics.complete.overview.fileExport.Layout.Column = 2;
-        
-        % Add the grid to the Preview tab.
-        if dev
-            graphics.complete.preview.level1 = uigridlayout(graphics.complete.tabPreview);
-            graphics.complete.preview.level1.ColumnWidth = {35,165,35,'1x'};
-            graphics.complete.preview.level1.RowHeight = {'1x',25};
-        end
-        
-        
-        % Preview axes.
-        if dev
-            graphics.complete.preview.wingPlotAxes = uiaxes(graphics.complete.preview.level1);
-            graphics.complete.preview.wingPlotAxes.Layout.Row = [1 2];
-            graphics.complete.preview.wingPlotAxes.Layout.Column = 4;
-        else
-            graphics.complete.preview.wingPlotAxes = uiaxes(graphics.complete.tabPreview);
-            graphics.complete.preview.wingPlotAxes.Position = [0 0 figW figH];
-        end
-        
-        
-        % Add the panel to the sidebar and add bottom buttons.
-        if dev
-            graphics.complete.preview.sidebar = uipanel(graphics.complete.preview.level1);
-            graphics.complete.preview.sidebar.Layout.Row = 1;
-            graphics.complete.preview.sidebar.Layout.Column = [1 3];
-            graphics.complete.preview.sidebar.Scrollable = 'on';
-            
-            panW = graphics.complete.preview.sidebar.Position(3);
-            
-            graphics.complete.preview.nested = uipanel(graphics.complete.preview.sidebar);
-            graphics.complete.preview.nested.Units = 'pixels';
-            graphics.complete.preview.nested.BorderType = 'none';
-            graphics.complete.preview.nested.Position = [10 10 panW-43 500];
-            
-            
-            graphics.complete.preview.settingsButton = uibutton(graphics.complete.preview.level1);
-            graphics.complete.preview.settingsButton.Text = '';
-            graphics.complete.preview.settingsButton.Icon = fullfile(paths.res,'cog.png');
-            graphics.complete.preview.settingsButton.Layout.Row = 2;
-            graphics.complete.preview.settingsButton.Layout.Column = 1;
-            
-            
-            graphics.complete.preview.collapseButton = uibutton(graphics.complete.preview.level1);
-            graphics.complete.preview.collapseButton.Text = '';
-            graphics.complete.preview.collapseButton.Icon = fullfile(paths.res,'leftarrow.png');
-            graphics.complete.preview.collapseButton.ButtonPushedFcn = @ToggleSidebar;
-            graphics.complete.preview.collapseButton.Layout.Row = 2;
-            graphics.complete.preview.collapseButton.Layout.Column = 3;
-            
-        end
-        
-        % Grid in the panel.
-        if dev
-            graphics.complete.preview.level2 = uigridlayout(graphics.complete.preview.nested);
-        else
-            graphics.complete.preview.level2 = uigridlayout(graphics.complete.overview.previewPanel);
-        end
-        graphics.complete.preview.level2.ColumnWidth = {'1x','1x'};
-        graphics.complete.preview.level2.RowHeight = {25,25,25,25,25,25,25,25};
-        
-        % Preview options.
-        graphics.complete.preview.individualColoursCheckbox = uicheckbox(graphics.complete.preview.level2);
-        graphics.complete.preview.individualColoursCheckbox.Value = config.individualColours;
-        graphics.complete.preview.individualColoursCheckbox.Text = 'Colour each wing section separately';
-        graphics.complete.preview.individualColoursCheckbox.ValueChangedFcn = @ToggleIndividualColours;
-        graphics.complete.preview.individualColoursCheckbox.Enable = enableStr;
-        graphics.complete.preview.individualColoursCheckbox.Layout.Row = 1;
-        graphics.complete.preview.individualColoursCheckbox.Layout.Column = [1 2];
-        
-        graphics.complete.preview.mainColourText = uilabel(graphics.complete.preview.level2);
-        graphics.complete.preview.mainColourText.Text = 'Main Wing Colour:';
-        graphics.complete.preview.mainColourText.HorizontalAlignment = 'right';
-        graphics.complete.preview.mainColourText.Enable = enableStr;
-        graphics.complete.preview.mainColourText.Layout.Row = 2;
-        graphics.complete.preview.mainColourText.Layout.Column = 1;
-        
-        graphics.complete.preview.mainColour = uibutton(graphics.complete.preview.level2);
-        graphics.complete.preview.mainColour.BackgroundColor = pref.mainColour;
-        graphics.complete.preview.mainColour.ButtonPushedFcn = @GetColour;
-        graphics.complete.preview.mainColour.UserData = 'Main Wing';
-        graphics.complete.preview.mainColour.Enable = enableStr;
-        graphics.complete.preview.mainColour.Text = num2str(uint8(255*pref.mainColour));
-        graphics.complete.preview.mainColour.Layout.Row = 2;
-        graphics.complete.preview.mainColour.Layout.Column = 2;
-        
-        graphics.complete.preview.secondColourText = uilabel(graphics.complete.preview.level2);
-        graphics.complete.preview.secondColourText.Text = 'Second Wing Colour:';
-        graphics.complete.preview.secondColourText.HorizontalAlignment = 'right';
-        graphics.complete.preview.secondColourText.Enable = enableStr;
-        graphics.complete.preview.secondColourText.Layout.Row = 3;
-        graphics.complete.preview.secondColourText.Layout.Column = 1;
-        
-        graphics.complete.preview.secondColour = uibutton(graphics.complete.preview.level2);
-        graphics.complete.preview.secondColour.BackgroundColor = pref.secondColour;
-        graphics.complete.preview.secondColour.UserData = 'Second Wing';
-        graphics.complete.preview.secondColour.ButtonPushedFcn = @GetColour;
-        graphics.complete.preview.secondColour.Enable = enableStr;
-        graphics.complete.preview.secondColour.Text = num2str(uint8(255*pref.secondColour));
-        graphics.complete.preview.secondColour.Layout.Row = 3;
-        graphics.complete.preview.secondColour.Layout.Column = 2;
-        
-        graphics.complete.preview.elevatorColourText = uilabel(graphics.complete.preview.level2);
-        graphics.complete.preview.elevatorColourText.Text = 'Elevator Colour:';
-        graphics.complete.preview.elevatorColourText.HorizontalAlignment = 'right';
-        graphics.complete.preview.elevatorColourText.Enable = enableStr;
-        graphics.complete.preview.elevatorColourText.Layout.Row = 4;
-        graphics.complete.preview.elevatorColourText.Layout.Column = 1;
-        
-        graphics.complete.preview.elevatorColour = uibutton(graphics.complete.preview.level2);
-        graphics.complete.preview.elevatorColour.BackgroundColor = pref.elevatorColour;
-        graphics.complete.preview.elevatorColour.UserData = 'Elevator';
-        graphics.complete.preview.elevatorColour.ButtonPushedFcn = @GetColour;
-        graphics.complete.preview.elevatorColour.Enable = enableStr;
-        graphics.complete.preview.elevatorColour.Text = num2str(uint8(255*pref.elevatorColour));
-        graphics.complete.preview.elevatorColour.Layout.Row = 4;
-        graphics.complete.preview.elevatorColour.Layout.Column = 2;
-        
-        graphics.complete.preview.finColourText = uilabel(graphics.complete.preview.level2);
-        graphics.complete.preview.finColourText.Text = 'Fin Colour:';
-        graphics.complete.preview.finColourText.HorizontalAlignment = 'right';
-        graphics.complete.preview.finColourText.Enable = enableStr;
-        graphics.complete.preview.finColourText.Layout.Row = 5;
-        graphics.complete.preview.finColourText.Layout.Column = 1;
-        
-        graphics.complete.preview.finColour = uibutton(graphics.complete.preview.level2);
-        graphics.complete.preview.finColour.BackgroundColor = pref.finColour;
-        graphics.complete.preview.finColour.UserData = 'Fin';
-        graphics.complete.preview.finColour.ButtonPushedFcn = @GetColour;
-        graphics.complete.preview.finColour.Enable = enableStr;
-        graphics.complete.preview.finColour.Text = num2str(uint8(255*pref.finColour));
-        graphics.complete.preview.finColour.Layout.Row = 5;
-        graphics.complete.preview.finColour.Layout.Column = 2;
-        
-        graphics.complete.preview.updateButton = uibutton(graphics.complete.preview.level2);
-        graphics.complete.preview.updateButton.Text = 'Update';
-        graphics.complete.preview.updateButton.ButtonPushedFcn = @UpdatePreview;
-        graphics.complete.preview.updateButton.Enable = enableStr;
-        graphics.complete.preview.updateButton.Layout.Row = 8;
-        graphics.complete.preview.updateButton.Layout.Column = [1 2];
-        
-        if dev
-            graphics.complete.preview.fancyGraphicsCheckbox = uicheckbox(graphics.complete.preview.level2);
-            graphics.complete.preview.fancyGraphicsCheckbox.Value = config.fancyGraphics;
-            graphics.complete.preview.fancyGraphicsCheckbox.Text = 'Show surfaces';
-            graphics.complete.preview.fancyGraphicsCheckbox.Layout.Row = 6;
-            graphics.complete.preview.fancyGraphicsCheckbox.Layout.Column = [1 2];
-        end
-        
-        graphics.complete.preview.axisOnCheckbox = uicheckbox(graphics.complete.preview.level2);
-        graphics.complete.preview.axisOnCheckbox.Value = config.showAxis;
-        graphics.complete.preview.axisOnCheckbox.Text = 'Show axes';
-        if dev
-            graphics.complete.preview.axisOnCheckbox.Layout.Row = 7;
-        else
-            graphics.complete.preview.axisOnCheckbox.Layout.Row = 6;
-        end
-        graphics.complete.preview.axisOnCheckbox.Layout.Column = [1 2];
-        graphics.complete.preview.axisOnCheckbox.ValueChangedFcn = @ToggleAxis;
-        
-        % Delete the entire contents of the figure and update name.
-        graphics.f.Name = sprintf('%s %s %s',plane.name,localisation.gui.resultsTitle,funcVersion);
-        delete(graphics.level1);
-        
-        % Apply visual settings and plot the three wings.
-        hold(graphics.complete.preview.wingPlotAxes,'on');
-        axis(graphics.complete.preview.wingPlotAxes,'equal');
-        grid(graphics.complete.preview.wingPlotAxes,'on');
-        if ~config.showAxis
-            axis(graphics.complete.preview.wingPlotAxes,'off');
-        end
-        WingPlot(graphics.mainWingCoords,pref.mainColour);
-        if config.individualColours
-            WingPlot(graphics.secondWingCoords,pref.secondColour);
-            WingPlot(graphics.elevatorCoords,pref.elevatorColour);
-            WingPlot(graphics.finCoords,pref.finColour);
-        else
-            WingPlot(graphics.secondWingCoords,pref.mainColour);
-            WingPlot(graphics.elevatorCoords,pref.mainColour);
-            WingPlot(graphics.finCoords,pref.mainColour);
-        end
-        view(graphics.complete.preview.wingPlotAxes,3);
-        axis(graphics.complete.preview.wingPlotAxes,'tight');
-        rotate3d(graphics.complete.preview.wingPlotAxes,'on')
-        
-        function Close(~,~)
-            close(graphics.f)
-            return
-        end
-        function ToggleAxis(~,~)
-            if graphics.complete.preview.axisOnCheckbox.Value
-                show = 1;
-                str = 'on';
-            else
-                show = 0;
-                str = 'off';
-            end
-            
-            config.showAxis = show;
-            axis(graphics.complete.preview.wingPlotAxes,str);
-            
-        end
-        function ToggleSidebar(~,~)
-            
-            if strcmp(graphics.complete.preview.sidebar.Visible,'on')
-                vis = 'off';
-                colW = {0,0,35,'1x'};
-                file = 'rightarrow.png';
-            else
-                vis = 'on';
-                colW = {35,165,35,'1x'};
-                file = 'leftarrow.png';
-            end
-            
-            % Change visibility as they aren't hidden due to overlap.
-            graphics.complete.preview.sidebar.Visible = vis;
-            
-            % Change the grid size.
-            graphics.complete.preview.level1.ColumnWidth = colW;
-            
-            % Change the button icon.
-            graphics.complete.preview.collapseButton.Icon = fullfile(paths.res,file);
-            
-        end
-        function UpdatePreview(~,~)
-            % Save preferences
-            pref.mainColour = graphics.complete.preview.mainColour.BackgroundColor;
-            pref.secondColour = graphics.complete.preview.secondColour.BackgroundColor;
-            pref.elevatorColour = graphics.complete.preview.elevatorColour.BackgroundColor;
-            pref.finColour = graphics.complete.preview.finColour.BackgroundColor;
-            config.individualColours = graphics.complete.preview.individualColoursCheckbox.Value;
-            save(paths.con,'config','pref','-append')
-            
-            % Clear axes and replot.
-            cla(graphics.complete.preview.wingPlotAxes);
-            hold(graphics.complete.preview.wingPlotAxes,'on');
-            axis(graphics.complete.preview.wingPlotAxes,'equal');
-            grid(graphics.complete.preview.wingPlotAxes,'on');
-            if ~config.showAxis
-                axis(graphics.complete.preview.wingPlotAxes,'off');
-            end
-            WingPlot(graphics.mainWingCoords,pref.mainColour);
-            if config.individualColours
-                WingPlot(graphics.secondWingCoords,pref.secondColour);
-                WingPlot(graphics.elevatorCoords,pref.elevatorColour);
-                WingPlot(graphics.finCoords,pref.finColour);
-            else
-                WingPlot(graphics.secondWingCoords,pref.mainColour);
-                WingPlot(graphics.elevatorCoords,pref.mainColour);
-                WingPlot(graphics.finCoords,pref.mainColour);
-            end
-            axis(graphics.complete.preview.wingPlotAxes,'tight');
-            rotate3d(graphics.complete.preview.wingPlotAxes,'on');
-        end
-        function ToggleIndividualColours(src,~)
-            if src.Value && config.fancyGraphics
-                str = 'on';
-            else
-                str = 'off';
-            end
-            
-            graphics.complete.preview.secondColourText.Enable = str;
-            graphics.complete.preview.secondColour.Enable = str;
-            graphics.complete.preview.elevatorColourText.Enable = str;
-            graphics.complete.preview.elevatorColour.Enable = str;
-            graphics.complete.preview.finColourText.Enable = str;
-            graphics.complete.preview.finColour.Enable = str;
-            
-        end
-        function GetColour(src,~)
-            src.BackgroundColor = uisetcolor(src,sprintf('%s %s %s','Choose',src.UserData,'Colour'));
-            src.Text = num2str(uint8(255*src.BackgroundColor));
+    function DebugLog(str)
+        if debug && ~comp
+            graphics.debug.console.Value{end+1} = str;
         end
     end
+
+    function str = MakeChar(data)
+        % Convert data to a string.
+        
+        cl = class(data);
+        
+        switch cl
+            case 'char'
+                str = data;
+            case 'double'
+                str = mat2str(data);
+            case 'logical'
+                str = num2str(data);
+        end
+        
+    end
+
+    function Setup
+        
+        % Perform the setup of folders needed.
+        if ~exist(paths.out,'dir')
+            mkdir(paths.out);
+        end
+        if ~exist(paths.dat,'dir')
+            mkdir(paths.dat);
+        end
+        if ~exist(paths.xml,'dir')
+            mkdir(paths.xml);
+        end
+        if ~exist(paths.res,'dir')
+            mkdir(paths.res);
+        end
+        
+        % Setup default config file.
+        config.shiftSections = 1;
+        config.autoReload = 1;
+        config.showAxis = 1;
+        config.fancyGraphics = 1;
+        config.individualColours = 1;
+        config.exportFile = 1;
+        config.exportVar = 1;
+        config.devWarn = 1;
+        config.debugWarn = 1;
+        config.showUI = 1;
+        config.checkIp = 1;
+        
+        pref.lastXml = paths.xml;
+        pref.lang = get(0,'language');
+        pref.installLang = get(0,'language');
+        pref.lengthUnits = localisation.units.lengthNames{1};
+        pref.massUnits = localisation.units.massNames{1};
+        pref.mainColour = [0.5 0.5 0.5];
+        pref.secondColour = [0.5 0.5 0.5];
+        pref.elevatorColour = [0.5 0.5 0.5];
+        pref.finColour = [0.5 0.5 0.5];
+        pref.defaultW = 0.85;
+        pref.defaultH = 0.85;
+        pref.licenceIp = '131.231.152.1';
+        
+        save(paths.con,'config','pref');
+        
+        % Write the images for use later.
+        blackRGB = uint8(zeros(16,16,3));
+        cogAlp = uint8([0 0 0 0 0 0 50 247 247 50 0 0 0 0 0 0; 0 0 8 43 ...
+            0 0 157 255 255 157 0 0 43 8 0 0; 0 8 184 255 192 120 246 ...
+            255 255 246 118 192 255 184 8 0; 0 43 255 255 255 255 255 ...
+            255 255 255 255 255 255 255 43 0; 0 0 192 255 255 255 255 ...
+            255 255 255 255 255 255 192 0 0; 0 0 119 255 255 248 110 15 ...
+            15 110 248 255 255 120 0 0; 50 157 246 255 255 112 0 0 0 0 ...
+            112 255 255 246 157 50; 247 255 255 255 255 19 0 0 0 0 20 ...
+            255 255 255 255 247; 247 255 255 255 255 21 0 0 0 0 21 255 ...
+            255 255 255 247; 50 157 246 255 255 118 0 0 0 0 118 255 255 ...
+            246 157 50; 0 0 119 255 255 250 120 25 25 120 250 255 255 ...
+            118 0 0; 0 0 192 255 255 255 255 255 255 255 255 255 255 ...
+            192 0 0; 0 43 255 255 255 255 255 255 255 255 255 255 255 ...
+            255 43 0; 0 8 184 255 192 119 246 255 255 246 119 192 255 ...
+            184 8 0; 0 0 8 43 0 0 157 255 255 157 0 0 43 8 0 0; 0 0 0 0 ...
+            0 0 50 247 247 50 0 0 0 0 0 0]);
+        
+        rightArrowAlp = uint8([0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0; 0 0 0 0 ...
+            0 0 0 0 0 0 0 0 0 0 0 0; 100 130 130 130 35 0 39 130 130 ...
+            130 97 0 0 0 0 0; 35 226 255 255 227 35 0 141 255 255 255 ...
+            127 0 0 0 0; 0 35 226 255 255 227 35 0 141 255 255 255 128 ...
+            0 0 0; 0 0 35 226 255 255 227 35 0 141 255 255 255 128 0 0; ...
+            0 0 0 35 226 255 255 227 36 0 141 255 255 255 128 0; 0 0 0 ...
+            0 35 232 255 255 227 32 0 141 255 255 255 128; 0 0 0 0 35 ...
+            227 255 255 227 35 0 141 255 255 255 143; 0 0 0 35 227 255 ...
+            255 228 37 1 141 255 255 255 145 0; 0 0 35 227 255 255 233 ...
+            40 0 141 255 255 255 145 0 0; 0 35 227 255 255 232 44 0 137 ...
+            255 255 255 142 0 0 0; 33 226 255 255 235 45 0 123 255 255 ...
+            255 137 0 0 0 0; 103 148 148 148 45 0 31 130 147 148 107 0 ...
+            0 0 0 0; 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0; 0 0 0 0 0 0 0 0 0 ...
+            0 0 0 0 0 0 0]);
+        
+        leftArrowAlp = fliplr(rightArrowAlp);
+        
+        folderAlp = uint8([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,...
+            0,0,0,0,0,0,0,0,0,0;0,9,86,93,93,93,83,1,0,0,0,0,0,0,0,0;0,...
+            148,255,255,255,255,255,149,8,8,8,8,8,5,0,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,251,99,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,255,178,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,255,178,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,255,178,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,255,178,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,255,178,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,255,178,0;0,178,255,255,...
+            255,255,255,255,255,255,255,255,255,255,178,0;0,149,255,255,...
+            255,255,255,255,255,255,255,255,255,255,149,0;0,9,86,93,93,...
+            93,93,93,93,93,93,93,93,86,9,0;0,0,0,0,0,0,0,0,0,0,0,0,0,0,...
+            0,0;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+        
+        
+        imwrite(blackRGB,fullfile(paths.res,'cog.png'),'Alpha',cogAlp);
+        imwrite(blackRGB,fullfile(paths.res,'rightarrow.png'),'Alpha',rightArrowAlp);
+        imwrite(blackRGB,fullfile(paths.res,'leftarrow.png'),'Alpha',leftArrowAlp);
+        imwrite(blackRGB,fullfile(paths.res,'folder.png'),'Alpha',folderAlp);
+        
+        % Write the export file.
+        pythonStr = 'def main()\n\tprint(''Hello World''):\n\n\nmain()';
+        
+        fPy = fopen(fullfile(paths.res,'exportPlane.py'),'wt');
+        fprintf(fPy,pythonStr);
+        fclose(fPy);
+        
+        % Move the language file to maintain a tidy directory.
+        if exist(fullfile(paths.root,'lang.mat'),'file')
+            movefile(fullfile(paths.root,'lang.mat'),fullfile(paths.res,'lang.mat'));
+            paths.lang = fullfile(paths.res,'lang.mat');
+        elseif ~exist(fullfile(paths.res,'lang.mat'),'file')
+            errorStruct.identifier = 'xflr2nx:CommandHandler:missingLangFile';
+            errorStruct.message = 'No language file could be located.';
+            error(errorStruct);
+        end
+        
+        % Add the folders to the path so they can be used.
+        addpath(genpath(paths.out));
+        addpath(genpath(paths.dat));
+        addpath(genpath(paths.xml));
+        addpath(genpath(paths.res));
+        
+        % Initialise the DAT matrix by updating it.
+        UpdateDatMatrix;
+        
+    end
+
+    function [isPresentStr,isPresentColor,enableLvl2Str,enableButtonStr, enableIsPresentStr] = CheckForIp
+        
+        % Defaults.
+        isPresentStr = 'IP checking disabled...';
+        enableIsPresentStr = 'on';
+        isPresentColor = [0 0 0];
+        enableLvl2Str = 'off';
+        enableButtonStr = 'off';
+        
+        % Check checkIp
+        if config.checkIp
+            enableButtonStr = 'on';
+            if ispc
+                % Call the OS to get the ipconfig (or equivalent). Error if fails.
+                [status, result] = system('ipconfig /all');
+                if status
+                    error('xflr2nx:CheckForIP:systemCallFailed','Call to OS failed.');
+                end
+                
+                % Look through existing IPs and see if required IP is present.
+                oneByte =  '(1\d\d|2[0-4]\d|25[0-5]|\d\d|\d)';
+                IPs = regexp(result, sprintf('((%s\\.){3}%s)',oneByte,oneByte),'match');
+                if any(strcmp(IPs,pref.licenceIp))
+                    isPresentStr = sprintf('Connected to required licence IP address: %s',pref.licenceIp);
+                    isPresentColor = [1 0 0];
+                    enableLvl2Str = 'on';
+                else
+                    isPresentStr = 'Not connected to licence IP! Export is diabled.';
+                    isPresentColor = [0 0 0];
+                    enableLvl2Str = 'off';
+                end
+            else
+                ipPresentStr = '';
+                enableLvl2Str = 'on';
+            end                        
+        else
+            enableLvl2Str = 'on';
+            enableIsPresentStr = 'off';
+        end
+        
+        
+    end
+
+    function mat = rotx(a)
+        % Mirrors functionality of toolbox. x-rotation matrix.
+        mat = [1,0,0;0,cosd(a),-sind(a);0,sind(a),cosd(a)];
+    end
+
+    function ErrorHandler(varargin)
+        % Global error handler.
+        % Takes either a single MException or a function to run.
+        
+        newErr = 0;
+        if isa(varargin{1},'MException')
+            thisError = varargin{1};
+            newErr = 1;
+        else
+            if length(varargin) == 1
+                varargin{1}();
+            else
+                func = varargin{1};
+                args = varargin{2:end};
+                func(args{:});
+            end
+        end
+        
+        if newErr
+            save(paths.config,'thisError','-append');            
+            if debug
+                rethrow(thisError);
+            elseif strcmp(thisError.identifier(1:7),'xflr2nx')
+                throwAsCaller(thisError);
+            else
+                error('xflr2nx:ErrorHandler:unknownError','An unknown error occurred.');
+            end
+        end
+        
+    end
+
+%% == GRAPHICS FUNCTIONS ==================================================
 
     function DrawConflictGui(thisFoil,otherFoil)
         
@@ -1906,14 +1750,15 @@ end
         
         %  Create and hide the UI as it is being constructed.
         graphics.f = uifigure('Visible','off');
-        graphics.f.Position = [0,0,figW,figH];
+        graphics.f.Position = [0 0 figW figH];
         graphics.f.NumberTitle = 'off';
-        graphics.f.Name = sprintf('%s %s',localisation.gui.chooseXmlTitle,funcVersion);
+        graphics.f.Name = 'XFLR to NX 2.0.0';
+        
         movegui(graphics.f,'center');
         
         % Setup grids.
         graphics.level1 = uigridlayout(graphics.f);
-        graphics.level1.ColumnWidth = {35,'1x',100,100};
+        graphics.level1.ColumnWidth = {35,'1x',100,35,100};
         graphics.level1.RowHeight = {25,'1x',25};
         
         % Load config.
@@ -1928,59 +1773,147 @@ end
         graphics.choice.pathEdit.ValueChangedFcn = @PathUpdated;
         graphics.choice.pathEdit.Layout.Row = 1;
         graphics.choice.pathEdit.Layout.Column = [1 3];
+        graphics.choice.pathEdit.Tooltip = 'The .xml file which defines the plane.';
         
         graphics.choice.chooseButton = uibutton(graphics.level1);
-        graphics.choice.chooseButton.Text = sprintf('%s...',localisation.gui.chooseButton);
-        graphics.choice.chooseButton.ButtonPushedFcn = @ChoosePath;
+        graphics.choice.chooseButton.Text = '';
         graphics.choice.chooseButton.Layout.Row = 1;
         graphics.choice.chooseButton.Layout.Column = 4;
+        graphics.choice.chooseButton.Icon = fullfile(paths.res,'folder.png');
+        graphics.choice.chooseButton.ButtonPushedFcn = @ChoosePath;
+                
+        graphics.choice.selectButton = uibutton(graphics.level1);
+        graphics.choice.selectButton.Text = 'Import...';
+        graphics.choice.selectButton.Layout.Row = 1;
+        graphics.choice.selectButton.Layout.Column = 5;
+        graphics.choice.selectButton.Tooltip = 'Choose which .xml file to process.';
+        graphics.choice.selectButton.ButtonPushedFcn = @ImportPlane;
         
         % Bottom line.
-        graphics.choice.okButton = uibutton(graphics.level1);
-        graphics.choice.okButton.Text = sprintf('%s',localisation.gui.ok);
-        graphics.choice.okButton.ButtonPushedFcn = @OK;
-        graphics.choice.okButton.Layout.Row = 3;
-        graphics.choice.okButton.Layout.Column = 3;
+        graphics.choice.closeButton = uibutton(graphics.level1);
+        graphics.choice.closeButton.Text = 'Close';
+        graphics.choice.closeButton.ButtonPushedFcn = @Cancel;
+        graphics.choice.closeButton.Layout.Row = 3;
+        graphics.choice.closeButton.Layout.Column = 5;
         
-        graphics.choice.cancelButton = uibutton(graphics.level1);
-        graphics.choice.cancelButton.Text = sprintf('%s',localisation.gui.cancel);
-        graphics.choice.cancelButton.ButtonPushedFcn = @Cancel;
-        graphics.choice.cancelButton.Layout.Row = 3;
-        graphics.choice.cancelButton.Layout.Column = 4;
+        graphics.choice.settingsButton = uibutton(graphics.level1);
+        graphics.choice.settingsButton.Icon = fullfile(paths.res,'cog.png');
+        graphics.choice.settingsButton.Text = '';
+        graphics.choice.settingsButton.ButtonPushedFcn = @ShowSettings;
+        graphics.choice.settingsButton.Layout.Row = 3;
+        graphics.choice.settingsButton.Layout.Column = 1;
         
-        if dev
-            graphics.choice.settingsButton = uibutton(graphics.level1);
-            graphics.choice.settingsButton.Icon = fullfile(paths.res,'cog.png');
-            graphics.choice.settingsButton.Text = '';
-            graphics.choice.settingsButton.ButtonPushedFcn = '';
-            graphics.choice.settingsButton.Layout.Row = 3;
-            graphics.choice.settingsButton.Layout.Column = 1;
-        end
+        % Settings.
+        graphics.settings.level1 = uigridlayout(graphics.f);
+        graphics.settings.level1.ColumnWidth = {35,'1x',100,100};
+        graphics.settings.level1.RowHeight = {'1x',25};
+        graphics.settings.level1.Visible = 'off';
         
-        % Central two columns.
+        graphics.settings.cancelButton = uibutton(graphics.settings.level1);
+        graphics.settings.cancelButton.Text = sprintf('%s',localisation.gui.cancel);
+        graphics.settings.cancelButton.ButtonPushedFcn = @CancelSettings;
+        graphics.settings.cancelButton.Layout.Row = 2;
+        graphics.settings.cancelButton.Layout.Column = 4;
+        
+        graphics.settings.saveButton = uibutton(graphics.settings.level1);
+        graphics.settings.saveButton.Text = sprintf('Save');
+        graphics.settings.saveButton.ButtonPushedFcn = @SaveSettings;
+        graphics.settings.saveButton.Layout.Row = 2;
+        graphics.settings.saveButton.Layout.Column = 3;
+        
+        graphics.settings.level2 = uigridlayout(graphics.settings.level1);
+        graphics.settings.level2.ColumnWidth = {'1x','3x'};
+        graphics.settings.level2.RowHeight = {'1x'};
+        graphics.settings.level2.Layout.Row = 1;
+        graphics.settings.level2.Layout.Column = [1 4];
+        
+        graphics.settings.tree = uitree(graphics.settings.level2);
+        graphics.settings.tree.Layout.Row = 1;
+        graphics.settings.tree.Layout.Row = 1;
+        graphics.settings.tree.SelectionChangedFcn = @SettingsNodeChanged;
+        
+        graphics.settings.configNode = uitreenode(graphics.settings.tree,'Text','Configuration');
+        graphics.settings.prefNode = uitreenode(graphics.settings.tree,'Text','Preferences');
+        
+        AddTreeNodes(graphics.settings.configNode,config);
+        AddTreeNodes(graphics.settings.prefNode,pref);
+        collapse(graphics.settings.tree);
+        
+        graphics.settings.level3 = uigridlayout(graphics.settings.level2);
+        graphics.settings.level3.ColumnWidth = {'1x','2x'};
+        graphics.settings.level3.RowHeight = {25,25,'1x'};
+        graphics.settings.level3.Layout.Row = 1;
+        graphics.settings.level3.Layout.Column = 2;
+        
+        graphics.settings.typeLab = uilabel(graphics.settings.level3);
+        graphics.settings.typeLab.Text = 'Data Type:';
+        graphics.settings.typeLab.Layout.Row = 1;
+        graphics.settings.typeLab.Layout.Column = 1;
+        
+        graphics.settings.type = uieditfield(graphics.settings.level3);
+        graphics.settings.type.Value = '';
+        graphics.settings.type.Layout.Row = 1;
+        graphics.settings.type.Layout.Column = 2;
+        graphics.settings.type.Enable = 'off';
+        
+        graphics.settings.valueLab = uilabel(graphics.settings.level3);
+        graphics.settings.valueLab.Text = 'Value:';
+        graphics.settings.valueLab.Layout.Row = 2;
+        graphics.settings.valueLab.Layout.Column = 1;
+        
+        graphics.settings.value = uieditfield(graphics.settings.level3);
+        graphics.settings.value.Value = '';
+        graphics.settings.value.Layout.Row = 2;
+        graphics.settings.value.Layout.Column = 2;
+        
+        % Lvl 2 grid.
         graphics.level2 = uigridlayout(graphics.level1);
-        graphics.level2.ColumnWidth = {'1x','1x'};
-        graphics.level2.RowHeight = {'1x'};
+        graphics.level2.ColumnWidth = {'1x','1x','1x'};
+        graphics.level2.RowHeight = {'1x','1x','1x'};
         graphics.level2.Layout.Row = 2;
-        graphics.level2.Layout.Column = [1 4];
+        graphics.level2.Layout.Column = [1 5];
         
-        % Add the two panels.
+        % Add the axis.
+        graphics.axesgrid = uigridlayout(graphics.level2);
+        graphics.axesgrid.Layout.Row = [1 2];
+        graphics.axesgrid.Layout.Column = [2 3];
+        graphics.axesgrid.RowHeight = {'1x'};
+        graphics.axesgrid.ColumnWidth = {'1x',35,0,0};
+        
+        graphics.choice.collapseButton = uibutton(graphics.axesgrid);
+        graphics.choice.collapseButton.Text = '';
+        graphics.choice.collapseButton.Icon = fullfile(paths.res,'leftarrow.png');
+        graphics.choice.collapseButton.Layout.Row = 1;
+        graphics.choice.collapseButton.Layout.Column = 2;
+        
+        graphics.choice.wingPlotAxes = uiaxes(graphics.level2);
+        graphics.choice.wingPlotAxes.Layout.Row = [1 2];
+        graphics.choice.wingPlotAxes.Layout.Column = [2 3];
+        
+        % Add the panels.
         graphics.choice.importOptionsPanel = uipanel(graphics.level2);
         graphics.choice.importOptionsPanel.Title = sprintf('%s',localisation.gui.outputOptions);
         graphics.choice.importOptionsPanel.FontWeight = 'bold';
-        graphics.choice.importOptionsPanel.Layout.Row = 1;
+        graphics.choice.importOptionsPanel.Layout.Row = 3;
         graphics.choice.importOptionsPanel.Layout.Column = 1;
         
         graphics.choice.previewPanel = uipanel(graphics.level2);
         graphics.choice.previewPanel.Title = sprintf('%s',localisation.gui.importPreview);
         graphics.choice.previewPanel.FontWeight = 'bold';
-        graphics.choice.previewPanel.Layout.Row = 1;
-        graphics.choice.previewPanel.Layout.Column = 2;
+        graphics.choice.previewPanel.Layout.Row = [1 2];
+        graphics.choice.previewPanel.Layout.Column = 1;
+        graphics.choice.previewPanel.Scrollable = 'on';
+        
+        graphics.choice.exportPanel = uipanel(graphics.level2);
+        graphics.choice.exportPanel.Title = 'Export';
+        graphics.choice.exportPanel.FontWeight = 'bold';
+        graphics.choice.exportPanel.Layout.Row = 3;
+        graphics.choice.exportPanel.Layout.Column = 3;
         
         % Preview panel.
         graphics.level3.preview = uigridlayout(graphics.choice.previewPanel);
         graphics.level3.preview.ColumnWidth = {'1x','1x'};
-        graphics.level3.preview.RowHeight = {rowH,rowH,rowH,rowH,rowH,rowH,rowH};
+        graphics.level3.preview.RowHeight = {12,12,12,12,12,12,12};
         
         graphics.choice.fileNameText = uilabel(graphics.level3.preview);
         graphics.choice.fileNameText.Text = sprintf('%s:',localisation.gui.filename);
@@ -2119,10 +2052,65 @@ end
         graphics.choice.autoReloadCheckbox.Layout.Row = 4;
         graphics.choice.autoReloadCheckbox.Layout.Column = 2;
         
-        % Make the UI visible.
-        PathUpdated;
-        graphics.f.Visible = 'on';
+        % Export panel.
+        graphics.level3.export = uigridlayout(graphics.choice.exportPanel);
+        graphics.level3.export.RowHeight = {'1x',25};
+        graphics.level3.export.ColumnWidth = {'1x'};
         
+        graphics.choice.exportButton = uibutton(graphics.level3.export);
+        graphics.choice.exportButton.Layout.Row = 2;
+        graphics.choice.exportButton.Layout.Column = 1;
+        graphics.choice.exportButton.Text = 'Export';
+        graphics.choice.exportButton.ButtonPushedFcn = @OK;
+        
+        % Process the path update from the initial draw.
+        PathUpdated;
+        
+        % Apply visual settings and plot the three wings.
+        hold(graphics.choice.wingPlotAxes,'on');
+        axis(graphics.choice.wingPlotAxes,'equal');
+        grid(graphics.choice.wingPlotAxes,'on');
+        if ~config.showAxis
+            axis(graphics.choice.wingPlotAxes,'off');
+        end
+        view(graphics.choice.wingPlotAxes,3);
+        axis(graphics.choice.wingPlotAxes,'tight');
+      
+        graphics.f.Visible = 'on';
+              
+        function ImportPlane(~,~,~)
+            raw = xml2struct(graphics.choice.pathEdit.Value);
+            UnpackPlane(raw);
+            partNames = {'mainWing','secondWing','elevator','fin'};
+            thisParts = partNames(ismember(partNames,fieldnames(plane)));
+            for part = 1:length(thisParts)
+                Process2(thisParts{part});
+            end
+            cla(graphics.choice.wingPlotAxes);
+            WingPlot(graphics.mainWingCoords,pref.mainColour);
+            if config.individualColours
+                if ismember('secondWing',thisParts)
+                    WingPlot(graphics.secondWingCoords,pref.secondColour);
+                end
+                if ismember('elevator',thisParts)
+                    WingPlot(graphics.elevatorCoords,pref.elevatorColour);
+                end
+                if ismember('fin',thisParts)
+                    WingPlot(graphics.finCoords,pref.finColour);
+                end
+            else
+                if ismember('secondWing',thisParts)
+                    WingPlot(graphics.secondWingCoords,pref.mainColour);
+                end
+                if ismember('elevator',thisParts)
+                    WingPlot(graphics.elevatorCoords,pref.mainColour);
+                end
+                if ismember('fin',thisParts)
+                    WingPlot(graphics.finCoords,pref.mainColour);
+                end
+            end
+            
+        end
         function ChoosePath(~,~,~)
             [filename,pathname] = uigetfile('*.xml',sprintf('%s',localisation.gui.chooseXml),paths.xml);
             if ~isequal(filename,0)
@@ -2130,8 +2118,6 @@ end
                 graphics.choice.pathEdit.Value = fullfile(pathname,filename);
                 PathUpdated;
             end
-            
-            
         end
         function PathUpdated(~,~,~)
             
@@ -2179,6 +2165,7 @@ end
                     graphics.choice.(children{i}).Enable = 'off';
                 end
             end
+            drawnow;
             
             % Add the path to the paths variable.
             choice = graphics.choice.pathEdit.Value;
@@ -2189,16 +2176,106 @@ end
             config.autoReload = graphics.choice.autoReloadCheckbox.Value;
             pref.massUnits = graphics.choice.massMenu.Value;
             pref.lengthUnits = graphics.choice.lengthMenu.Value;
-            if config.autoReload
-                UpdateDatMatrix;
-            end
             
             % Save the data.
             save(paths.con,'config','pref','-append');
             
             % Proceed.
-            xmlPath = choice;
-            Kernel;
+            xmlPath = choice; % Bodge for now
+            [~,xmlName,~] = fileparts(xmlPath);
+            
+            % Autoreload.
+            if config.autoReload
+                UpdateDatMatrix;
+            end
+            
+            % Make a new folder for the output files.
+            if config.exportFile
+                parentDir = fullfile(paths.out,xmlName,filesep);
+                if ~exist(parentDir,'dir')
+                    DebugLog('Parent directory not found. Attempting to make one...');
+                    mkdir(parentDir);
+                    DebugLog('Parent directory made successfully...');
+                else
+                    DebugLog('Parent directory found...');
+                end
+                dateAndTime = datestr(datetime('now'),localisation.dateTimeFormat);
+                pref.lastOutputDir = fullfile(parentDir,dateAndTime);
+                mkdir(pref.lastOutputDir)
+                DebugLog('Output directory made successfully...')
+                save(paths.con,'pref','config');
+            end
+            
+            % Main function
+            partNames = {'mainWing','secondWing','elevator','fin'};
+            thisParts = partNames(ismember(partNames,fieldnames(plane)));
+            for part = 1:length(thisParts)
+                Process(thisParts{part});
+            end
+            
+            % Tidy up name for output, then assign variable in the base workspace.
+            if config.exportVar
+                if strcmp(plane.name,'Plane Name')
+                    varName = xmlName;
+                else
+                    varName = plane.name;
+                end
+                assignin('base',sprintf(NameTidy2(varName)),plane);
+                DebugLog('Wrote the output variable to base workspace successfully...');
+            end
+            
+            % Re-enable controls.
+             children = fieldnames(graphics.choice);
+            for i = 1:length(children)
+                try
+                    graphics.choice.(children{i}).Enable = 'on';
+                end
+            end
+            drawnow;
+            
+        end
+        function CancelSettings(~,~)
+            
+            graphics.settings.level1.Visible = 'off';
+            graphics.level1.Visible = 'on';
+            graphics.f.Name = sprintf('%s %s',localisation.gui.chooseXmlTitle,funcVersion);
+            
+        end
+        function ShowSettings(~,~)
+            
+            graphics.level1.Visible = 'off';
+            graphics.settings.level1.Visible = 'on';
+            graphics.f.Name = sprintf('%s %s','Settings - XFLR to NX',funcVersion);
+            
+            % Dummy config in case of changes.
+            configChanged = config;
+            prefChanged = pref;
+            
+        end
+        function SaveSettings(~,~)
+            
+            config = configChanged;
+            pref = prefChanged;
+            
+            graphics.settings.level1.Visible = 'off';
+            graphics.level1.Visible = 'on';
+            graphics.f.Name = sprintf('%s %s',localisation.gui.chooseXmlTitle,funcVersion);
+            
+        end
+        function SettingsNodeChanged(~,event)
+            
+            % Save old value.
+            if ~isempty(event.PreviousSelectedNodes)
+                if strcmp(event.PreviousSelectedNodes.Parent.Text,'Configuration')
+                    configChanged.(event.PreviousSelectedNodes.Text) = graphics.settings.value.Value;
+                elseif strcmp(event.PreviousSelectedNodes.Parent.Text,'Preferences')
+                    prefChanged.(event.PreviousSelectedNodes.Text) = graphics.settings.value.Value;
+                end
+            end
+            
+            
+            graphics.settings.value.Value = MakeChar(event.SelectedNodes.NodeData);
+            graphics.settings.type.Value = class(event.SelectedNodes.NodeData);
             
         end
     end
@@ -3142,6 +3219,22 @@ end
             graphics.choice.hOKButton.Position = [(figureWidth-220),10,100,25];
             graphics.choice.hCancelButton.Position = [(figureWidth-110),10,100,25];
         end
+    end
+
+    function AddTreeNodes(parent,child)
+        
+        n = fieldnames(child);
+        for i = 1:length(n)
+            if ~isstruct(child(1).(n{i}))
+                topTree = uitreenode(parent,'Text',n{i},'NodeData',child(1).(n{i}));
+            else
+                topTree = uitreenode(parent,'Text',n{i});
+                if isstruct(child(1).(n{i}))
+                    AddTreeNodes(topTree,child.(n{i}));
+                end
+            end
+        end
+        
     end
 
 %% == CHANGELOG ===========================================================
